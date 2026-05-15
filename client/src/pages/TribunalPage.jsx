@@ -36,13 +36,13 @@ export default function TribunalPage() {
             <strong style={{ color: "#ff9a5c" }}>{tribunal.accusedName}</strong> received {tribunal.votes} vote{tribunal.votes !== 1 ? "s" : ""}.
           </p>
           <p className="muted" style={{ fontSize: "0.82rem", marginTop: 4 }}>
-            Answer correctly to survive. Fail — eliminated.
+            The group has voted. Answer the trivia question — correct answer earns +2 pts, but the verdict is already decided.
           </p>
         </div>
 
         {isAccused && !tribunalResult && (
           <div className="alert alert-danger center mb-md fade-in">
-            <strong>YOU ARE ON TRIAL.</strong> Answer correctly to survive.
+            <strong>YOU ARE ON TRIAL.</strong> The group voted you out. Answer correctly for +2 pts.
           </div>
         )}
 
@@ -84,20 +84,20 @@ export default function TribunalPage() {
         {/* Tribunal result */}
         {tribunalResult && (
           <div className="card fade-in mt-md"
-            style={{ borderLeft: `4px solid ${tribunalResult.survived ? "#ff5c00" : "#c0392b"}` }}>
+            style={{ borderLeft: `4px solid #c0392b` }}>
             <div className="center">
-              <div className="page-tag" style={{ marginBottom: 8, color: tribunalResult.survived ? "#ff5c00" : "#c0392b" }}>
-                {tribunalResult.survived ? "SURVIVED" : "ELIMINATED"}
+              <div className="page-tag" style={{ marginBottom: 8, color: "#c0392b" }}>
+                ELIMINATED
               </div>
-              <h2 style={{ color: tribunalResult.survived ? "#ff5c00" : "#c0392b" }}>
-                {tribunalResult.survived ? "Verdict: Acquitted" : "Verdict: Retrained"}
-              </h2>
+              <h2 style={{ color: "#c0392b" }}>Verdict: Retrained</h2>
               <p className="mt-sm" style={{ fontSize: "0.88rem" }}>
-                <strong>{tribunalResult.accusedName}</strong>{" "}
-                {tribunalResult.survived
-                  ? "answered correctly and remains in the game."
-                  : "answered incorrectly and has been retrained."}
+                <strong>{tribunalResult.accusedName}</strong> has been eliminated by the group's vote.
               </p>
+              <div className="alert mt-sm" style={{ background: tribunalResult.correct ? "#1a2a1a" : "#2a1a1a", borderLeft: `3px solid ${tribunalResult.correct ? "#ff5c00" : "#c0392b"}` }}>
+                {tribunalResult.correct
+                  ? <><strong style={{ color: "#ff5c00" }}>CORRECT ANSWER</strong> — +2 pts awarded</>
+                  : <><strong style={{ color: "#c0392b" }}>WRONG ANSWER</strong> — no points</>}
+              </div>
               {!tribunalResult.survived && tribunalResult.roleRevealed && (
                 <div className="alert alert-warning mt-md">
                   Role revealed: <strong>{tribunalResult.roleRevealed.name}</strong>

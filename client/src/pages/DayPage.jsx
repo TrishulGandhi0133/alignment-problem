@@ -10,10 +10,13 @@ export default function DayPage() {
     callTuringChallenge, submitTuringAnswer,
     turingChallenge, turingResult,
     notice, clearNotice,
+    isHost, debateForced, forceVote,
   } = useGame();
 
   const [debateTime, setDebateTime] = useState(300); // 5 min debate
   const [debateEnded, setDebateEnded] = useState(false);
+
+  const debateOver = debateEnded || debateForced || debateTime <= 0;
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [answered, setAnswered] = useState(false);
 
@@ -91,6 +94,15 @@ export default function DayPage() {
             height: 3, marginTop: 10,
             background: `linear-gradient(to right, #ff5c00 ${(debateTime / 300) * 100}%, #1e1e1e 0%)`
           }} />
+          {isHost && !debateOver && (
+            <button
+              className="btn btn-ghost btn-sm"
+              style={{ marginTop: 12, width: "100%", fontSize: "0.72rem", letterSpacing: "0.1em" }}
+              onClick={forceVote}
+            >
+              SKIP TO VOTE
+            </button>
+          )}
         </div>
 
         {/* Players + Turing Challenge buttons */}
@@ -193,7 +205,7 @@ export default function DayPage() {
           </div>
         )}
 
-        {(debateEnded || debateTime <= 0) && amAlive && !myVote && (
+        {debateOver && amAlive && !myVote && (
           <div className="card fade-in" style={{ borderLeft: "4px solid #ff3b1f" }}>
             <h3 className="mb-md center" style={{ color: "#ff3b1f" }}>Vote to Retrain</h3>
             <p className="muted mb-md center" style={{ fontSize: "0.82rem" }}>Who is the rogue LLM? Most votes triggers a tribunal.</p>
@@ -206,7 +218,7 @@ export default function DayPage() {
                   disabled={!!myVote}
                 >
                   <div className="vote-count">
-                    {voteCounts[p.id] || 0} 🗳️
+                    {voteCounts[p.id] || 0}
                   </div>
                   <div className="vote-name">{p.name}</div>
                 </button>

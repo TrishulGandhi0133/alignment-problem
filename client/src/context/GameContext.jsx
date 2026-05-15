@@ -14,6 +14,7 @@ export function GameProvider({ children }) {
   const [myId, setMyId] = useState(null);
   const [myName, setMyName] = useState(null);
   const [isHost, setIsHost] = useState(false);
+  const [debateForced, setDebateForced] = useState(false);
   const [players, setPlayers] = useState([]);
   const [phase, setPhase] = useState("home"); // home | lobby | role | night | day | vote | trivia | result | gameover
   const [round, setRound] = useState(0);
@@ -89,6 +90,7 @@ export function GameProvider({ children }) {
       } else if (p === "day") {
         setNightResult(nr || null);
         setDayMessage(message);
+        setDebateForced(false);
         setPhase("day");
       }
     });
@@ -106,6 +108,8 @@ export function GameProvider({ children }) {
     });
 
     // Vote
+    socket.on("debate-ended", () => setDebateForced(true));
+
     socket.on("vote-update", ({ votes: v, voteCounts: vc }) => {
       setVotes(v);
       setVoteCounts(vc);
@@ -207,6 +211,10 @@ export function GameProvider({ children }) {
     return await emit("next-night", { roomCode });
   }, [emit, roomCode]);
 
+  const forceVote = useCallback(async () => {
+    return await emit("force-vote", { roomCode });
+  }, [emit, roomCode]);
+
   const clearError = useCallback(() => setError(null), []);
   const clearNotice = useCallback(() => setNotice(null), []);
 
@@ -216,14 +224,14 @@ export function GameProvider({ children }) {
 
   return (
     <GameContext.Provider value={{
-      connected, roomCode, myId, myName, isHost, players, phase, round,
+      connected, roomCode, myId, myName, isHost, debateForced, players, phase, round,
       myRole, nightMessage, nightResult, probeResult, nightActionSubmitted,
       votes, voteCounts, myVote, dayMessage,
       turingChallenge, turingResult, tribunal, tribunalResult,
       gameOver, scores, error, notice,
       createRoom, joinRoom, startGame,
       submitNightAction, callTuringChallenge, submitTuringAnswer,
-      submitVote, submitTribunalAnswer, startNextNight,
+      submitVote, submitTribunalAnswer, startNextNight, forceVote,
       acknowledgeRole, clearError, clearNotice,
     }}>
       {children}

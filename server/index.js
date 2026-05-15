@@ -178,36 +178,37 @@ io.on("connection", (socket) => {
     const correct = String(answerId) === String(question.answer);
     const accused = room.players.find((p) => p.id === accusedId);
 
-    if (correct) {
-      // Survived
-      if (accused) accused.score += 2; // bonus for tribunal survival
-      io.to(room.code).emit("tribunal-result", {
-        survived: true,
-        accusedId,
-        accusedName: accused?.name,
-        correct: true,
-        correctAnswer: question.answer,
-        explanation: question.explanation,
-      });
-    } else {
-      // Eliminated
-      if (accused) accused.alive = false;
-      io.to(room.code).emit("tribunal-result", {
-        survived: false,
-        accusedId,
-        accusedName: accused?.name,
-        roleRevealed: accused?.role,
-        correct: false,
-        correctAnswer: question.answer,
-        explanation: question.explanation,
-      });
+    // Guilt is decided by the vote — always eliminated regardless of trivia answer
+    // Correct answer awards bonus points only
+    if (accused) {
+      accused.alive = false;
+      if (correct) accused.score += 2;
     }
+    io.to(room.code).emit("tribunal-result", {
+      survived: false,
+      accusedId,
+      accusedName: accused?.name,
+      roleRevealed: accused?.role,
+      correct,
+      correctAnswer: question.answer,
+      explanation: question.explanation,
+    });
 
     room.tribunalActive = null;
     callback({ success: true, correct });
 
     // Check win condition
     setTimeout(() => checkAndContinue(room, io), 3000);
+  });
+
+  // ─── FORCE VOTE (host skips debate timer) ──────────────────────
+  socket.on("force-vote", ({ roomCode }, callback) => {
+    const room = getRoom(roomCode);
+    if (!room) return callback({ success: false });
+    if (room.hostId !== socket.id) return callback({ success: false, error: "Not host." });
+    if (room.phase !== "day") return callback({ success: false, error: "Not day phase." });
+    io.to(room.code).emit("debate-ended");
+    callback({ success: true });
   });
 
   // ─── CONTINUE TO NEXT NIGHT ───────────────────────────────────
