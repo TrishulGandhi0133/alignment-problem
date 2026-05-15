@@ -11,6 +11,7 @@ export default function DayPage() {
     turingChallenge, turingResult,
     notice, clearNotice,
     isHost, debateForced, forceVote,
+    probeResult,
   } = useGame();
 
   const [debateTime, setDebateTime] = useState(300); // 5 min debate
@@ -73,6 +74,18 @@ export default function DayPage() {
         {notice && (
           <div className="alert alert-warning mb-md" onClick={clearNotice} style={{ cursor: "pointer" }}>
             {notice}
+          </div>
+        )}
+
+        {/* Red-Teamer private probe result — persists through the day */}
+        {probeResult && myRole?.id === "red-teamer" && (
+          <div className={`alert ${probeResult.isRogue ? "alert-danger" : "alert-success"} mb-md fade-in`}
+            style={{ borderLeft: `3px solid ${probeResult.isRogue ? "#c0392b" : "#ff5c00"}` }}>
+            <div style={{ fontWeight: 800, fontSize: "0.7rem", letterSpacing: "0.15em", marginBottom: 4, textTransform: "uppercase" }}>
+              [PROBE RESULT — PRIVATE]
+            </div>
+            <strong>{probeResult.targetName}</strong> is {probeResult.isRogue ? <span style={{ color: "#c0392b" }}>a Rogue LLM.</span> : <span style={{ color: "#ff5c00" }}>aligned.</span>}
+            <div className="muted" style={{ fontSize: "0.75rem", marginTop: 4 }}>Only you can see this. Use it wisely.</div>
           </div>
         )}
 

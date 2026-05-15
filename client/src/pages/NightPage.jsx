@@ -72,6 +72,14 @@ export default function NightPage() {
           <h2 style={{ color: "#f0f0f0" }}>The lab is dark</h2>
         </div>
 
+        {/* Role reminder — shown to ALL alive players */}
+        <div className="alert alert-info mb-md center">
+          <span style={{ fontWeight: 700, marginRight: 6, color: myRole?.color, textTransform: "uppercase", letterSpacing: "0.08em", fontSize: "0.78rem" }}>{myRole?.name}</span>
+          <span style={{ fontSize: "0.82rem" }}>
+            {needsAction ? actionLabel : "You have no night action. Wait for others to act."}
+          </span>
+        </div>
+
         {needsAction && !nightActionSubmitted && (
           <>
             {/* Timer */}
@@ -91,12 +99,6 @@ export default function NightPage() {
                 />
                 <text x="36" y="41" textAnchor="middle" className="timer-text" fontSize="16" fontWeight="800" fill="#f0f0f0">{timeLeft}</text>
               </svg>
-            </div>
-
-            {/* Role reminder */}
-            <div className="alert alert-info mb-md center">
-              <span style={{ fontWeight: 700, marginRight: 6, color: myRole.color, textTransform: "uppercase", letterSpacing: "0.08em", fontSize: "0.78rem" }}>{myRole.name}</span>
-              <span style={{ fontSize: "0.82rem" }}>{actionLabel}</span>
             </div>
 
             {/* Player targets */}
