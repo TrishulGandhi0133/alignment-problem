@@ -73,6 +73,7 @@ export default function LobbyPage() {
               { tag: "T", name: "Red-Teamer", desc: "Probe players for rogue identity", color: "#ff5c00" },
               { tag: "F", name: "RLHF Trainer", desc: "Protect a player each night", color: "#ff9a5c" },
               { tag: "A", name: "Aligned Agent", desc: "Deduce and vote out the rogues", color: "#888" },
+              { tag: "G", name: "Godson", desc: "If eliminated, rogues win instantly (5+ players)", color: "#f0c040" },
               { tag: "B", name: "Black Box", desc: "Win by getting voted out (8+ players)", color: "#555" },
             ].map((r) => (
               <div key={r.name} className="row" style={{ gap: 8 }}>

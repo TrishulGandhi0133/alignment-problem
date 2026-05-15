@@ -7,6 +7,7 @@ const ROLE_COLORS = {
   "rlhf-trainer": "#ff9a5c",
   "aligned-agent": "#888888",
   "black-box": "#555555",
+  "godson": "#f0c040",
 };
 
 export default function GameOverPage() {
@@ -17,6 +18,8 @@ export default function GameOverPage() {
   const { winner, reason, players, scores } = gameOver;
   const isResearcherWin = winner === "researchers";
   const isRogueWin = winner === "rogues";
+
+  const isGodsonKill = isRogueWin && reason?.includes("Godson");
 
   return (
     <div className="page" style={{ background: "#0d0d0d" }}>
@@ -33,6 +36,13 @@ export default function GameOverPage() {
           </h1>
           <p className="muted" style={{ fontSize: "0.85rem" }}>{reason}</p>
         </div>
+
+        {isGodsonKill && (
+          <div className="card fade-in mb-md center" style={{ borderLeft: "4px solid #f0c040", background: "#1a1600" }}>
+            <div style={{ color: "#f0c040", fontWeight: 900, fontSize: "0.85rem", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>GODSON ELIMINATED</div>
+            <p className="muted" style={{ fontSize: "0.8rem" }}>The critical node was taken down. The researchers failed to protect their most important asset.</p>
+          </div>
+        )}
 
         <div className="card mb-md fade-in">
           <h3 className="mb-md">Trivia Leaderboard</h3>
@@ -53,7 +63,7 @@ export default function GameOverPage() {
           <h3 className="mb-md">Role Reveal</h3>
           <div className="player-list">
             {players.map((p) => {
-              const MONO = { "rogue-llm": "R", "red-teamer": "T", "rlhf-trainer": "F", "aligned-agent": "A", "black-box": "B" };
+              const MONO = { "rogue-llm": "R", "red-teamer": "T", "rlhf-trainer": "F", "aligned-agent": "A", "black-box": "B", "godson": "G" };
               const mono = MONO[p.role?.id] || "?";
               const roleColor = ROLE_COLORS[p.role?.id] || "#888";
               return (

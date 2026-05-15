@@ -5,7 +5,7 @@ export default function RolePage() {
   const { myRole, myName, acknowledgeRole } = useGame();
   const [revealed, setRevealed] = useState(false);
 
-  const MONOGRAMS = { "rogue-llm": "R", "red-teamer": "T", "rlhf-trainer": "F", "aligned-agent": "A", "black-box": "B" };
+  const MONOGRAMS = { "rogue-llm": "R", "red-teamer": "T", "rlhf-trainer": "F", "aligned-agent": "A", "black-box": "B", "godson": "G" };
   const mono = myRole ? MONOGRAMS[myRole.id] || "?" : "?";
 
   if (!myRole) return null;

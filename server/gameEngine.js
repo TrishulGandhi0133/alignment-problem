@@ -67,6 +67,7 @@ function createRoom(hostSocketId, hostName) {
           result.eliminated = true;
           result.eliminatedId = victim.id;
           result.eliminatedName = victim.name;
+          result.godsonKilled = victim.role?.id === "godson";
         }
       } else if (hallucTarget && hallucTarget === protectTargetId) {
         result.protected = true;
@@ -102,6 +103,12 @@ function createRoom(hostSocketId, hostName) {
       const alive = this.players.filter((p) => p.alive);
       const rogueCount = alive.filter((p) => p.role.alignment === "rogue").length;
       const researcherCount = alive.filter((p) => p.role.alignment === "good").length;
+
+      // Godson dead = instant rogue win (check all players, not just alive)
+      const godson = this.players.find((p) => p.role?.id === "godson");
+      if (godson && !godson.alive) {
+        return { winner: "rogues", reason: "The Godson has been eliminated. Rogue LLMs win!" };
+      }
 
       if (rogueCount === 0) {
         return { winner: "researchers", reason: "All rogue LLMs have been retrained!" };

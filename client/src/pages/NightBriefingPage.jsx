@@ -30,10 +30,15 @@ export default function NightBriefingPage() {
       "TACTIC: Act suspicious — but not so obvious it backfires.",
       "PLAY: Show signs of guilt without being dismissed too early.",
     ],
+    "godson": [
+      "WARNING: If you are eliminated — night or tribunal — rogues win instantly.",
+      "SURVIVE: Do not reveal your role. Blend in completely.",
+      "TRUST: Quietly signal the RLHF Trainer to cover you without exposing yourself.",
+    ],
   };
 
   const roleTips = myRole ? (tips[myRole.id] || []) : [];
-  const MONOGRAMS = { "rogue-llm": "R", "red-teamer": "T", "rlhf-trainer": "F", "aligned-agent": "A", "black-box": "B" };
+  const MONOGRAMS = { "rogue-llm": "R", "red-teamer": "T", "rlhf-trainer": "F", "aligned-agent": "A", "black-box": "B", "godson": "G" };
   const mono = myRole ? (MONOGRAMS[myRole.id] || "?") : "?";
 
   return (
