@@ -10,18 +10,22 @@ export default function NightPage() {
   const [autoSubmitted, setAutoSubmitted] = useState(false);
 
   const needsAction = myRole?.nightAction != null;
+  const me = players.find((p) => p.id === myId);
+  const amAlive = me?.alive;
   const alivePlayers = players.filter((p) => p.alive && p.id !== myId);
 
   // Countdown
   useEffect(() => {
-    if (nightActionSubmitted || !needsAction) return;
+    if (nightActionSubmitted || !needsAction || !amAlive) return;
     const t = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(t);
           if (!nightActionSubmitted && !autoSubmitted) {
             setAutoSubmitted(true);
-            submitNightAction(selected); // may be null = skip
+            // Auto-pick random alive player instead of null to prevent broken protection
+            const fallback = selected || (alivePlayers[0]?.id ?? null);
+            submitNightAction(fallback);
           }
           return 0;
         }
@@ -29,7 +33,7 @@ export default function NightPage() {
       });
     }, 1000);
     return () => clearInterval(t);
-  }, [nightActionSubmitted, needsAction, selected, autoSubmitted, submitNightAction]);
+  }, [nightActionSubmitted, needsAction, amAlive, selected, autoSubmitted, submitNightAction]);
 
   const handleSubmit = () => {
     if (!selected && myRole?.nightAction !== null) return;
@@ -49,6 +53,18 @@ export default function NightPage() {
   return (
     <div className="night-screen">
       <div style={{ width: "100%", maxWidth: 440 }}>
+
+        {/* Eliminated ghost screen */}
+        {!amAlive && (
+          <div className="card center fade-in">
+            <div className="page-tag" style={{ marginBottom: 8, color: "#c0392b" }}>ELIMINATED</div>
+            <h3 style={{ color: "#888" }}>You are a Ghost</h3>
+            <p className="muted mt-sm" style={{ fontSize: "0.82rem" }}>Observe silently. Waiting for night to resolve...</p>
+          </div>
+        )}
+
+        {amAlive && (
+          <>
         {/* Header */}
         <div className="center mb-md">
           <div className="night-rule" />
@@ -137,6 +153,8 @@ export default function NightPage() {
             {probeResult.isRogue ? "a Rogue LLM." : "an aligned agent."}
             <p className="mt-sm" style={{ fontSize: "0.78rem" }}>Keep this intel private or deploy it strategically.</p>
           </div>
+        )}
+          </>
         )}
       </div>
     </div>

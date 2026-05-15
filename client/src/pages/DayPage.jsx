@@ -26,7 +26,7 @@ export default function DayPage() {
 
   // Debate countdown
   useEffect(() => {
-    if (debateEnded) return;
+    if (debateEnded || debateForced) return;
     const t = setInterval(() => {
       setDebateTime((prev) => {
         if (prev <= 1) { clearInterval(t); setDebateEnded(true); return 0; }
@@ -34,7 +34,7 @@ export default function DayPage() {
       });
     }, 1000);
     return () => clearInterval(t);
-  }, [debateEnded]);
+  }, [debateEnded, debateForced]);
 
   const fmtTime = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
