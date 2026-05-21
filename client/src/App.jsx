@@ -9,6 +9,12 @@ import DayPage from "./pages/DayPage";
 import TribunalPage from "./pages/TribunalPage";
 import AwaitingNightPage from "./pages/AwaitingNightPage";
 import GameOverPage from "./pages/GameOverPage";
+import CricketSetupPage from "./pages/CricketSetupPage";
+import CricketTossPage from "./pages/CricketTossPage";
+import CricketPowerSetupPage from "./pages/CricketPowerSetupPage";
+import CricketMatchPage from "./pages/CricketMatchPage";
+import CricketInningsBreakPage from "./pages/CricketInningsBreakPage";
+import CricketResultPage from "./pages/CricketResultPage";
 import "./styles.css";
 
 function GameRouter() {
@@ -24,6 +30,12 @@ function GameRouter() {
     case "tribunal":        return <TribunalPage />;
     case "awaiting-next-night": return <AwaitingNightPage />;
     case "gameover":        return <GameOverPage />;
+    case "cricket-setup": return <CricketSetupPage />;
+    case "cricket-toss": return <CricketTossPage />;
+    case "cricket-power-setup": return <CricketPowerSetupPage />;
+    case "cricket-live": return <CricketMatchPage />;
+    case "cricket-innings-break": return <CricketInningsBreakPage />;
+    case "cricket-result": return <CricketResultPage />;
     default:                return <HomePage />;
   }
 }

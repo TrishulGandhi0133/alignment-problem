@@ -4,6 +4,7 @@ import { useGame } from "../context/GameContext";
 export default function HomePage() {
   const { createRoom, joinRoom, error, clearError, connected } = useGame();
   const [tab, setTab] = useState("create");
+  const [mode, setMode] = useState("alignment");
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -12,7 +13,7 @@ export default function HomePage() {
     e.preventDefault();
     if (!name.trim()) return;
     setLoading(true);
-    await createRoom(name.trim());
+    await createRoom(name.trim(), mode);
     setLoading(false);
   };
 
@@ -72,6 +73,13 @@ export default function HomePage() {
         {tab === "create" ? (
           <form onSubmit={handleCreate} className="stack">
             <div>
+              <label className="muted" style={{ display: "block", marginBottom: 6, fontSize: "0.85rem" }}>Game mode</label>
+              <div className="row" style={{ gap: 8 }}>
+                <button type="button" className={`btn ${mode === "alignment" ? "btn-primary" : "btn-ghost"}`} onClick={() => setMode("alignment")}>Alignment</button>
+                <button type="button" className={`btn ${mode === "cricket" ? "btn-primary" : "btn-ghost"}`} onClick={() => setMode("cricket")}>Hand Cricket</button>
+              </div>
+            </div>
+            <div>
               <label className="muted" style={{ display: "block", marginBottom: 6, fontSize: "0.85rem" }}>Your name</label>
               <input
                 className="input"
@@ -83,7 +91,7 @@ export default function HomePage() {
               />
             </div>
             <button className="btn btn-success" type="submit" disabled={!name.trim() || !connected || loading}>
-              {loading ? <><span className="spinner" style={{ width: 16, height: 16 }} /> Creating…</> : "Create Game Room"}
+              {loading ? <><span className="spinner" style={{ width: 16, height: 16 }} /> Creating…</> : `Create ${mode === "cricket" ? "Cricket" : "Alignment"} Room`}
             </button>
           </form>
         ) : (
@@ -117,8 +125,8 @@ export default function HomePage() {
 
         <hr className="divider" />
         <p className="muted center" style={{ fontSize: "0.75rem", lineHeight: 1.6 }}>
-          4–10 players · 30–45 min · AI/ML trivia challenges<br />
-          Host creates a room · others join with the code
+          Alignment: 4–10 players · social deduction<br />
+          Hand Cricket: 2 active players + spectators · trivia-powered abilities
         </p>
       </div>
     </div>

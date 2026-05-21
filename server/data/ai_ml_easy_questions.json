@@ -1,0 +1,110 @@
+[
+  {
+    "id": "aiml-001",
+    "category": "AI Basics",
+    "difficulty": "easy",
+    "question": "What does AI stand for?",
+    "options": ["Automated Input", "Artificial Intelligence", "Applied Internet", "Algorithmic Interface"],
+    "answer": 1,
+    "explanation": "AI stands for Artificial Intelligence."
+  },
+  {
+    "id": "aiml-002",
+    "category": "Machine Learning",
+    "difficulty": "easy",
+    "question": "Machine learning is mainly about systems that:",
+    "options": ["Only follow fixed rules", "Learn patterns from data", "Work without data", "Replace databases"],
+    "answer": 1,
+    "explanation": "ML models learn from data patterns rather than only fixed handwritten rules."
+  },
+  {
+    "id": "aiml-003",
+    "category": "Supervised Learning",
+    "difficulty": "easy",
+    "question": "In supervised learning, training data usually has:",
+    "options": ["No labels", "Random noise only", "Input-output labels", "Only images"],
+    "answer": 2,
+    "explanation": "Supervised learning uses labeled examples with known targets."
+  },
+  {
+    "id": "aiml-004",
+    "category": "Deep Learning",
+    "difficulty": "easy",
+    "question": "A neural network is inspired by:",
+    "options": ["Human brain structure", "Road networks", "Power grids", "Compiler design"],
+    "answer": 0,
+    "explanation": "Neural networks are loosely inspired by biological neurons and connections."
+  },
+  {
+    "id": "aiml-005",
+    "category": "NLP",
+    "difficulty": "easy",
+    "question": "NLP primarily deals with:",
+    "options": ["Satellite movement", "Natural language text and speech", "Circuit design", "Weather prediction only"],
+    "answer": 1,
+    "explanation": "Natural Language Processing focuses on understanding and generating language."
+  },
+  {
+    "id": "aiml-006",
+    "category": "Model Evaluation",
+    "difficulty": "easy",
+    "question": "Accuracy in classification is the ratio of:",
+    "options": ["Correct predictions to total predictions", "Training samples to model size", "False positives to true positives", "Features to labels"],
+    "answer": 0,
+    "explanation": "Accuracy measures the fraction of predictions that are correct."
+  },
+  {
+    "id": "aiml-007",
+    "category": "GenAI",
+    "difficulty": "easy",
+    "question": "A generative AI model is designed to:",
+    "options": ["Only sort numbers", "Create new content", "Delete duplicate files", "Run antivirus scans"],
+    "answer": 1,
+    "explanation": "Generative models produce new text, images, audio, or other content."
+  },
+  {
+    "id": "aiml-008",
+    "category": "Prompting",
+    "difficulty": "easy",
+    "question": "A prompt in an LLM system is:",
+    "options": ["A hardware chip", "An instruction/input to the model", "A training loss", "A network cable"],
+    "answer": 1,
+    "explanation": "Prompts are inputs that guide model responses."
+  },
+  {
+    "id": "aiml-009",
+    "category": "Data",
+    "difficulty": "easy",
+    "question": "Why is high-quality data important in ML?",
+    "options": ["It reduces internet usage", "It improves model learning and reliability", "It removes need for testing", "It guarantees perfect predictions"],
+    "answer": 1,
+    "explanation": "Better data quality generally leads to more reliable model behavior."
+  },
+  {
+    "id": "aiml-010",
+    "category": "Ethics",
+    "difficulty": "easy",
+    "question": "Model bias means:",
+    "options": ["The model runs faster", "Systematic unfair error patterns", "The UI has dark mode", "The database is full"],
+    "answer": 1,
+    "explanation": "Bias refers to unfair or skewed behavior in model outcomes."
+  },
+  {
+    "id": "aiml-011",
+    "category": "Overfitting",
+    "difficulty": "easy",
+    "question": "Overfitting happens when a model:",
+    "options": ["Learns training data too specifically", "Uses too little memory", "Cannot read labels", "Always predicts randomly"],
+    "answer": 0,
+    "explanation": "Overfit models perform well on training data but poorly on unseen data."
+  },
+  {
+    "id": "aiml-012",
+    "category": "LLM",
+    "difficulty": "easy",
+    "question": "What is a common use of Large Language Models?",
+    "options": ["Writing and summarizing text", "Charging phone batteries", "Rendering 3D graphics only", "Compressing videos only"],
+    "answer": 0,
+    "explanation": "LLMs are widely used for generating, rewriting, and summarizing language."
+  }
+]

@@ -11,6 +11,7 @@ export function GameProvider({ children }) {
 
   // ── Core state ──────────────────────────────────────────────────
   const [roomCode, setRoomCode] = useState(null);
+  const [gameMode, setGameMode] = useState("alignment");
   const [myId, setMyId] = useState(null);
   const [myName, setMyName] = useState(null);
   const [isHost, setIsHost] = useState(false);
@@ -46,6 +47,11 @@ export function GameProvider({ children }) {
   // ── Scores ───────────────────────────────────────────────────────
   const [scores, setScores] = useState([]);
 
+  // ── Cricket ──────────────────────────────────────────────────────
+  const [cricketState, setCricketState] = useState(null);
+  const [cricketPowerTrivia, setCricketPowerTrivia] = useState(null);
+  const [cricketPowerResult, setCricketPowerResult] = useState(null);
+
   // ── Error / Notice ───────────────────────────────────────────────
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
@@ -73,7 +79,7 @@ export function GameProvider({ children }) {
 
     // Phase changes
     socket.on("phase-change", ({ phase: p, round: r, players: pl, nightResult: nr, message }) => {
-      setRound(r);
+      if (typeof r === "number") setRound(r);
       setPlayers(pl);
       setNightActionSubmitted(false);
       setMyVote(null);
@@ -83,6 +89,8 @@ export function GameProvider({ children }) {
       setTuringResult(null);
       setTribunal(null);
       setTribunalResult(null);
+      setCricketPowerTrivia(null);
+      setCricketPowerResult(null);
       if (p === "night") {
         setPhase("night");
         setNightMessage(message);
@@ -92,6 +100,8 @@ export function GameProvider({ children }) {
         setDayMessage(message);
         setDebateForced(false);
         setPhase("day");
+      } else {
+        setPhase(p);
       }
     });
 
@@ -141,6 +151,19 @@ export function GameProvider({ children }) {
       setPhase("gameover");
     });
 
+    // Cricket
+    socket.on("cricket-state", ({ state }) => {
+      setCricketState(state);
+    });
+    socket.on("cricket-power-trivia", (data) => {
+      setCricketPowerResult(null);
+      setCricketPowerTrivia(data);
+    });
+    socket.on("cricket-power-result", (data) => {
+      setCricketPowerResult(data);
+      setCricketPowerTrivia(null);
+    });
+
     return () => socket.disconnect();
   }, []);
 
@@ -152,11 +175,12 @@ export function GameProvider({ children }) {
     });
   }, []);
 
-  const createRoom = useCallback(async (name) => {
+  const createRoom = useCallback(async (name, selectedMode = "alignment") => {
     setError(null);
-    const res = await emit("create-room", { playerName: name });
+    const res = await emit("create-room", { playerName: name, gameMode: selectedMode });
     if (res.success) {
       setRoomCode(res.roomCode);
+      setGameMode(res.gameMode || selectedMode);
       setMyName(name);
       setIsHost(true);
       setPlayers([res.player]);
@@ -170,6 +194,7 @@ export function GameProvider({ children }) {
     const res = await emit("join-room", { roomCode: code, playerName: name });
     if (res.success) {
       setRoomCode(res.roomCode);
+      setGameMode(res.gameMode || "alignment");
       setMyName(name);
       setIsHost(false);
       setPhase("lobby");
@@ -215,6 +240,39 @@ export function GameProvider({ children }) {
     return await emit("force-vote", { roomCode });
   }, [emit, roomCode]);
 
+  // Cricket actions
+  const submitCricketSetup = useCallback(async ({ teamAName, teamBName, overs }) => {
+    return await emit("cricket-setup", { roomCode, teamAName, teamBName, overs });
+  }, [emit, roomCode]);
+
+  const callCricketToss = useCallback(async () => {
+    return await emit("cricket-call-toss", { roomCode });
+  }, [emit, roomCode]);
+
+  const chooseCricketToss = useCallback(async (choice) => {
+    return await emit("cricket-choose-toss", { roomCode, choice });
+  }, [emit, roomCode]);
+
+  const submitCricketPowers = useCallback(async (mapping) => {
+    return await emit("cricket-submit-powers", { roomCode, mapping });
+  }, [emit, roomCode]);
+
+  const requestCricketPower = useCallback(async (roleSlot) => {
+    return await emit("cricket-request-power", { roomCode, roleSlot });
+  }, [emit, roomCode]);
+
+  const submitCricketPowerAnswer = useCallback(async (answerId) => {
+    return await emit("cricket-submit-power-answer", { roomCode, answerId });
+  }, [emit, roomCode]);
+
+  const playCricketBall = useCallback(async (number) => {
+    return await emit("cricket-play-ball", { roomCode, number });
+  }, [emit, roomCode]);
+
+  const startCricketSecondInnings = useCallback(async () => {
+    return await emit("cricket-start-second-innings", { roomCode });
+  }, [emit, roomCode]);
+
   const clearError = useCallback(() => setError(null), []);
   const clearNotice = useCallback(() => setNotice(null), []);
 
@@ -224,14 +282,17 @@ export function GameProvider({ children }) {
 
   return (
     <GameContext.Provider value={{
-      connected, roomCode, myId, myName, isHost, debateForced, players, phase, round,
+      connected, roomCode, gameMode, myId, myName, isHost, debateForced, players, phase, round,
       myRole, nightMessage, nightResult, probeResult, nightActionSubmitted,
       votes, voteCounts, myVote, dayMessage,
       turingChallenge, turingResult, tribunal, tribunalResult,
-      gameOver, scores, error, notice,
+      gameOver, scores, cricketState, cricketPowerTrivia, cricketPowerResult, error, notice,
       createRoom, joinRoom, startGame,
       submitNightAction, callTuringChallenge, submitTuringAnswer,
       submitVote, submitTribunalAnswer, startNextNight, forceVote,
+      submitCricketSetup, callCricketToss, chooseCricketToss,
+      submitCricketPowers, requestCricketPower, submitCricketPowerAnswer,
+      playCricketBall, startCricketSecondInnings,
       acknowledgeRole, clearError, clearNotice,
     }}>
       {children}

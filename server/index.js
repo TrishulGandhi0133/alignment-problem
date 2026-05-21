@@ -2,7 +2,22 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
-const { createRoom, getRoom, addPlayer, removePlayer } = require("./gameEngine");
+const {
+  createRoom,
+  getRoom,
+  addPlayer,
+  getTeamSideForSocket,
+  startCricketSetup,
+  callCricketToss,
+  chooseToss,
+  submitPowerMapping,
+  requestPowerTrivia,
+  submitPowerTriviaAnswer,
+  submitBall,
+  resolveBall,
+  startSecondInnings,
+  buildCricketView,
+} = require("./gameEngine");
 
 const app = express();
 app.use(cors());
@@ -20,11 +35,12 @@ io.on("connection", (socket) => {
   console.log(`Socket connected: ${socket.id}`);
 
   // ─── CREATE ROOM ──────────────────────────────────────────────
-  socket.on("create-room", ({ playerName }, callback) => {
-    const { room, player } = createRoom(socket.id, playerName);
+  socket.on("create-room", ({ playerName, gameMode }, callback) => {
+    const mode = gameMode === "cricket" ? "cricket" : "alignment";
+    const { room, player } = createRoom(socket.id, playerName, mode);
     socket.join(room.code);
     console.log(`Room created: ${room.code} by ${playerName}`);
-    callback({ success: true, roomCode: room.code, player });
+    callback({ success: true, roomCode: room.code, player, gameMode: room.mode });
   });
 
   // ─── JOIN ROOM ────────────────────────────────────────────────
@@ -32,7 +48,8 @@ io.on("connection", (socket) => {
     const room = getRoom(roomCode.toUpperCase());
     if (!room) return callback({ success: false, error: "Room not found." });
     if (room.phase !== "lobby") return callback({ success: false, error: "Game already started." });
-    if (room.players.length >= 10) return callback({ success: false, error: "Room is full (max 10)." });
+    if (room.mode === "alignment" && room.players.length >= 10) return callback({ success: false, error: "Room is full (max 10)." });
+    if (room.mode === "cricket" && room.players.length >= 20) return callback({ success: false, error: "Room is full (max 20 including spectators)." });
     const nameExists = room.players.some(
       (p) => p.name.toLowerCase() === playerName.toLowerCase()
     );
@@ -42,7 +59,7 @@ io.on("connection", (socket) => {
     socket.join(room.code);
     io.to(room.code).emit("lobby-update", { players: room.players.map(sanitizePlayer) });
     console.log(`${playerName} joined ${room.code}`);
-    callback({ success: true, roomCode: room.code, player });
+    callback({ success: true, roomCode: room.code, player, gameMode: room.mode });
   });
 
   // ─── START GAME ───────────────────────────────────────────────
@@ -50,6 +67,22 @@ io.on("connection", (socket) => {
     const room = getRoom(roomCode);
     if (!room) return callback({ success: false, error: "Room not found." });
     if (room.hostId !== socket.id) return callback({ success: false, error: "Only the host can start." });
+
+    if (room.mode === "cricket") {
+      const activePlayers = room.players.filter((p) => !p.isSpectator);
+      if (activePlayers.length !== 2) {
+        return callback({ success: false, error: "Cricket mode requires exactly 2 active players." });
+      }
+      room.phase = "cricket-setup";
+      io.to(room.code).emit("phase-change", {
+        phase: "cricket-setup",
+        players: room.players.map(sanitizePlayer),
+        message: "Set team names and overs to begin.",
+      });
+      emitCricketState(room, io);
+      return callback({ success: true });
+    }
+
     if (room.players.length < 4) return callback({ success: false, error: "Need at least 4 players." });
 
     room.assignRoles();
@@ -69,6 +102,152 @@ io.on("connection", (socket) => {
       message: `Night ${room.round} begins. Perform your secret actions.`,
     });
 
+    callback({ success: true });
+  });
+
+  // ─── CRICKET SETUP ─────────────────────────────────────────────
+  socket.on("cricket-setup", ({ roomCode, teamAName, teamBName, overs }, callback) => {
+    const room = getRoom(roomCode);
+    if (!room || room.mode !== "cricket") return callback({ success: false, error: "Invalid cricket room." });
+    if (room.hostId !== socket.id) return callback({ success: false, error: "Only host can configure setup." });
+
+    const result = startCricketSetup(room, overs, teamAName, teamBName);
+    if (!result.success) return callback(result);
+
+    io.to(room.code).emit("phase-change", {
+      phase: "cricket-toss",
+      players: room.players.map(sanitizePlayer),
+      message: "Toss time.",
+    });
+    emitCricketState(room, io);
+    callback({ success: true });
+  });
+
+  socket.on("cricket-call-toss", ({ roomCode }, callback) => {
+    const room = getRoom(roomCode);
+    if (!room || room.mode !== "cricket") return callback({ success: false, error: "Invalid cricket room." });
+    if (room.hostId !== socket.id) return callback({ success: false, error: "Only host can call toss." });
+
+    const result = callCricketToss(room);
+    if (!result.success) return callback(result);
+
+    emitCricketState(room, io);
+    callback({ success: true, winnerId: result.winnerId, winnerSide: result.winnerSide });
+  });
+
+  socket.on("cricket-choose-toss", ({ roomCode, choice }, callback) => {
+    const room = getRoom(roomCode);
+    if (!room || room.mode !== "cricket") return callback({ success: false, error: "Invalid cricket room." });
+
+    const result = chooseToss(room, socket.id, choice);
+    if (!result.success) return callback(result);
+
+    io.to(room.code).emit("phase-change", {
+      phase: "cricket-power-setup",
+      players: room.players.map(sanitizePlayer),
+      message: "Each team chooses secret power mapping.",
+    });
+    emitCricketState(room, io);
+    callback({ success: true });
+  });
+
+  socket.on("cricket-submit-powers", ({ roomCode, mapping }, callback) => {
+    const room = getRoom(roomCode);
+    if (!room || room.mode !== "cricket") return callback({ success: false, error: "Invalid cricket room." });
+
+    const result = submitPowerMapping(room, socket.id, mapping);
+    if (!result.success) return callback(result);
+
+    if (room.phase === "cricket-live") {
+      io.to(room.code).emit("phase-change", {
+        phase: "cricket-live",
+        players: room.players.map(sanitizePlayer),
+        message: "Innings has started. Submit your number for each ball.",
+      });
+    }
+
+    emitCricketState(room, io);
+    callback({ success: true });
+  });
+
+  socket.on("cricket-request-power", ({ roomCode, roleSlot }, callback) => {
+    const room = getRoom(roomCode);
+    if (!room || room.mode !== "cricket") return callback({ success: false, error: "Invalid cricket room." });
+
+    const result = requestPowerTrivia(room, socket.id, roleSlot);
+    if (!result.success) return callback(result);
+
+    io.to(socket.id).emit("cricket-power-trivia", {
+      roleSlot,
+      question: result.question,
+      expiresAt: result.expiresAt,
+    });
+    emitCricketState(room, io);
+    callback({ success: true });
+  });
+
+  socket.on("cricket-submit-power-answer", ({ roomCode, answerId }, callback) => {
+    const room = getRoom(roomCode);
+    if (!room || room.mode !== "cricket") return callback({ success: false, error: "Invalid cricket room." });
+
+    const result = submitPowerTriviaAnswer(room, socket.id, answerId);
+    if (!result.success) return callback(result);
+
+    io.to(socket.id).emit("cricket-power-result", result);
+    emitCricketState(room, io);
+    callback(result);
+  });
+
+  socket.on("cricket-play-ball", ({ roomCode, number }, callback) => {
+    const room = getRoom(roomCode);
+    if (!room || room.mode !== "cricket") return callback({ success: false, error: "Invalid cricket room." });
+
+    const submitted = submitBall(room, socket.id, number);
+    if (!submitted.success) return callback(submitted);
+
+    if (!submitted.resolved) {
+      emitCricketState(room, io);
+      return callback({ success: true, waitingFor: submitted.waitingFor });
+    }
+
+    const resolved = resolveBall(room);
+    if (!resolved.success) return callback(resolved);
+
+    if (room.phase === "cricket-innings-break") {
+      io.to(room.code).emit("phase-change", {
+        phase: "cricket-innings-break",
+        players: room.players.map(sanitizePlayer),
+        message: "First innings complete. Start the chase.",
+      });
+    }
+
+    if (room.phase === "cricket-result") {
+      io.to(room.code).emit("phase-change", {
+        phase: "cricket-result",
+        players: room.players.map(sanitizePlayer),
+        message: "Match complete.",
+      });
+      io.to(room.code).emit("cricket-match-over", { winner: room.cricket.winner });
+    }
+
+    emitCricketState(room, io);
+    callback({ success: true, ball: resolved.ball });
+  });
+
+  socket.on("cricket-start-second-innings", ({ roomCode }, callback) => {
+    const room = getRoom(roomCode);
+    if (!room || room.mode !== "cricket") return callback({ success: false, error: "Invalid cricket room." });
+    if (room.hostId !== socket.id) return callback({ success: false, error: "Only host can start second innings." });
+
+    const result = startSecondInnings(room);
+    if (!result.success) return callback(result);
+
+    io.to(room.code).emit("phase-change", {
+      phase: "cricket-live",
+      players: room.players.map(sanitizePlayer),
+      message: "Second innings started.",
+    });
+    emitCricketState(room, io);
     callback({ success: true });
   });
 
@@ -242,7 +421,29 @@ io.on("connection", (socket) => {
       if (playerIndex !== -1) {
         const player = room.players[playerIndex];
         if (room.phase === "lobby") {
+          if (room.mode === "cricket" && room.cricket) {
+            room.cricket.activePlayerIds = room.cricket.activePlayerIds.filter((id) => id !== socket.id);
+            room.cricket.spectatorIds = room.cricket.spectatorIds.filter((id) => id !== socket.id);
+          }
+
           room.players.splice(playerIndex, 1);
+
+          if (room.mode === "cricket" && room.cricket) {
+            room.players.forEach((p) => {
+              p.teamSide = null;
+              p.isSpectator = true;
+            });
+
+            const activeNow = room.players.slice(0, 2);
+            room.cricket.activePlayerIds = activeNow.map((p) => p.id);
+            room.cricket.spectatorIds = room.players.slice(2).map((p) => p.id);
+
+            activeNow.forEach((p, idx) => {
+              p.isSpectator = false;
+              p.teamSide = idx === 0 ? "A" : "B";
+            });
+          }
+
           io.to(room.code).emit("lobby-update", { players: room.players.map(sanitizePlayer) });
         } else {
           // Mark as disconnected but keep in game
@@ -253,6 +454,10 @@ io.on("connection", (socket) => {
           room.hostId = room.players[0].id;
           io.to(room.code).emit("host-changed", { newHostId: room.hostId });
         }
+
+        if (room.mode === "cricket") {
+          emitCricketState(room, io);
+        }
       }
     });
   });
@@ -261,12 +466,32 @@ io.on("connection", (socket) => {
 // ─── HELPERS ────────────────────────────────────────────────────
 
 function sanitizePlayer(p) {
-  return { id: p.id, name: p.name, alive: p.alive, score: p.score, disconnected: p.disconnected || false };
+  return {
+    id: p.id,
+    name: p.name,
+    alive: p.alive,
+    score: p.score,
+    disconnected: p.disconnected || false,
+    teamSide: p.teamSide || null,
+    isSpectator: Boolean(p.isSpectator),
+    isHost: Boolean(p.isHost),
+  };
 }
 
 function stripAnswer(q) {
   const { answer, ...rest } = q;
   return rest;
+}
+
+function emitCricketState(room, io) {
+  if (room.mode !== "cricket") return;
+  room.players.forEach((player) => {
+    const state = buildCricketView(room, player.id);
+    io.to(player.id).emit("cricket-state", {
+      state,
+      teamSide: getTeamSideForSocket(room, player.id),
+    });
+  });
 }
 
 function resolveNight(room, io) {
