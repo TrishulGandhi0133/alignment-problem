@@ -409,6 +409,26 @@ function isInningsComplete(innings) {
   return false;
 }
 
+function syncWicketsFromBatters(innings) {
+  const outs = ["batsman1", "batsman2"].filter((slot) => innings.batStats[slot].out).length;
+  innings.wickets = outs;
+}
+
+function normalizeStrikerState(innings) {
+  if (!innings.batStats[innings.striker]?.out) return;
+  if (!innings.batStats[innings.nonStriker]?.out) {
+    const temp = innings.striker;
+    innings.striker = innings.nonStriker;
+    innings.nonStriker = temp;
+    return;
+  }
+  const available = ["batsman1", "batsman2"].find((slot) => !innings.batStats[slot].out);
+  if (available) {
+    innings.striker = available;
+    innings.nonStriker = available === "batsman1" ? "batsman2" : "batsman1";
+  }
+}
+
 function applyPowerUsage(innings, side, roleSlot, ballNumber) {
   if (roleSlot === "bowler") {
     innings.bowlerStats.lastPowerBall = ballNumber;
@@ -420,6 +440,13 @@ function applyPowerUsage(innings, side, roleSlot, ballNumber) {
 function resolveBall(room) {
   const cricket = room.cricket;
   const innings = cricket.innings;
+  syncWicketsFromBatters(innings);
+  normalizeStrikerState(innings);
+
+  if (isInningsComplete(innings)) {
+    return { success: false, error: "Innings already complete." };
+  }
+
   const battingTeam = innings.battingTeam;
   const bowlingTeam = innings.bowlingTeam;
   const batInput = cricket.pendingBallInputs[battingTeam];
@@ -466,9 +493,10 @@ function resolveBall(room) {
   innings.bowlerStats.balls += 1;
 
   if (wicket) {
-    innings.wickets += 1;
-    innings.batStats[striker].out = true;
-    innings.bowlerStats.wickets += 1;
+    if (!innings.batStats[striker].out) {
+      innings.batStats[striker].out = true;
+      innings.bowlerStats.wickets += 1;
+    }
   } else {
     innings.score += runs;
     innings.batStats[striker].runs += runs;
@@ -494,6 +522,8 @@ function resolveBall(room) {
       innings.nonStriker = available === "batsman1" ? "batsman2" : "batsman1";
     }
   }
+
+  syncWicketsFromBatters(innings);
 
   cricket.pendingBallInputs = {};
   cricket.armedPowers[battingTeam] = null;

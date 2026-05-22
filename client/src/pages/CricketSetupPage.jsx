@@ -42,7 +42,7 @@ export default function CricketSetupPage() {
           <form className="stack" onSubmit={onSubmit}>
             <input className="input" value={teamAName} onChange={(e) => setTeamAName(e.target.value)} placeholder="Team A name" maxLength={24} />
             <input className="input" value={teamBName} onChange={(e) => setTeamBName(e.target.value)} placeholder="Team B name" maxLength={24} />
-            <input className="input" type="number" min={1} max={20} value={overs} onChange={(e) => setOvers(e.target.value)} />
+            <input className="input" type="number" min={1} max={20} value={overs} onChange={(e) => setOvers(e.target.value)} placeholder="Number of overs (1-20)" />
             <button className="btn btn-success" type="submit" disabled={saving || activePlayers.length !== 2}>
               {saving ? "Saving..." : "Lock Setup"}
             </button>
